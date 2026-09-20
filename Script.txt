@@ -1,0 +1,102 @@
+-- LocalScript (StarterPlayerScripts)
+
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Charge le tool original (pour garder son animation)
+local tool = game:GetObjects("rbxassetid://132605917763436")[1]
+tool.TextureId = "rbxassetid://11043368148" -- Icône correcte
+
+-- Remplace le Handle par ton mesh
+local oldHandle = tool:FindFirstChild("Handle")
+if oldHandle then
+	oldHandle:Destroy()
+end
+
+local handle = Instance.new("MeshPart")
+handle.Name = "Handle"
+handle.MeshId = "rbxassetid://623102664"
+handle.Size = Vector3.new(0.01, 0.01, 0.01)
+handle.Color = Color3.fromRGB(0, 0, 0)
+handle.Material = Enum.Material.SmoothPlastic
+handle.CanCollide = false
+handle.Massless = true
+handle.Parent = tool
+
+-- Grip
+tool.Grip = CFrame.new(-0.416, -0.056, 0) * CFrame.Angles(0, math.rad(-90), 0)
+
+-- Son
+local sound = Instance.new("Sound")
+sound.SoundId = "rbxassetid://4919529864"
+sound.Volume = 1
+sound.Parent = handle
+
+tool.Parent = player:WaitForChild("Backpack")
+
+--==================== PROJECTILE NOIR ====================
+local function isNumberName(name)
+	return tonumber(name) ~= nil
+end
+
+local function shootProjectile()
+	if not tool.Parent or not tool.Parent:IsA("Model") then return end
+
+	sound:Play()
+
+	local startPos = handle.Position
+	local direction = (mouse.Hit.Position - startPos).Unit
+
+	local projectile = Instance.new("Part")
+	projectile.Name = "BlackProjectile"
+	projectile.Shape = Enum.PartType.Ball
+	projectile.Size = Vector3.new(0.15, 0.15, 0.15)
+	projectile.Color = Color3.fromRGB(0, 0, 0)
+	projectile.Material = Enum.Material.SmoothPlastic
+	projectile.CanCollide = false
+	projectile.CanTouch = true
+	projectile.Massless = true
+	projectile.Anchored = false
+	projectile.CFrame = CFrame.new(startPos, startPos + direction)
+	projectile.Parent = workspace
+
+	local speed = 120
+	projectile.AssemblyLinearVelocity = direction * speed
+
+	game:GetService("Debris"):AddItem(projectile, 3)
+
+	local connection
+	connection = projectile.Touched:Connect(function(hit)
+		if not hit or not hit.Parent then return end
+		if hit:IsDescendantOf(player.Character) then return end
+		if hit.Name == "BlackProjectile" then return end
+
+		local model = hit:FindFirstAncestorOfClass("Model")
+		local target = model or hit
+
+		-- Si c'est un Model nommé uniquement par un nombre (1, 2, 3...), on ne touche PAS au model entier
+		if target:IsA("Model") and isNumberName(target.Name) then
+			if hit:IsA("BasePart") then
+				hit.Color = Color3.fromRGB(0, 0, 0)
+				hit.Material = Enum.Material.Foil
+			end
+		elseif target:IsA("Model") then
+			for _, part in ipairs(target:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.Color = Color3.fromRGB(0, 0, 0)
+					part.Material = Enum.Material.Foil
+				end
+			end
+		elseif target:IsA("BasePart") then
+			target.Color = Color3.fromRGB(0, 0, 0)
+			target.Material = Enum.Material.Foil
+		end
+
+		projectile:Destroy()
+		if connection then
+			connection:Disconnect()
+		end
+	end)
+end
+
+tool.Activated:Connect(shootProjectile)
