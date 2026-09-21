@@ -5,23 +5,30 @@ local mouse = player:GetMouse()
 
 -- Charge le tool original (pour garder son animation)
 local tool = game:GetObjects("rbxassetid://132605917763436")[1]
-tool.TextureId = "rbxassetid://11043368148" -- Icône correcte
+tool.TextureId = "rbxassetid://11043368148"
 
--- Remplace le Handle par ton mesh
+-- Supprime l'ancien Handle
 local oldHandle = tool:FindFirstChild("Handle")
 if oldHandle then
 	oldHandle:Destroy()
 end
 
-local handle = Instance.new("MeshPart")
+-- Nouveau Handle
+local handle = Instance.new("Part")
 handle.Name = "Handle"
-handle.MeshId = "rbxassetid://623102664"
 handle.Size = Vector3.new(0.01, 0.01, 0.01)
 handle.Color = Color3.fromRGB(0, 0, 0)
 handle.Material = Enum.Material.SmoothPlastic
 handle.CanCollide = false
 handle.Massless = true
+handle.Transparency = 0
 handle.Parent = tool
+
+local mesh = Instance.new("SpecialMesh")
+mesh.MeshType = Enum.MeshType.FileMesh
+mesh.MeshId = "rbxassetid://623102664"
+mesh.Scale = Vector3.new(0.01, 0.01, 0.01) -- ← bien plus petit
+mesh.Parent = handle
 
 -- Grip
 tool.Grip = CFrame.new(-0.416, -0.056, 0) * CFrame.Angles(0, math.rad(-90), 0)
@@ -74,7 +81,6 @@ local function shootProjectile()
 		local model = hit:FindFirstAncestorOfClass("Model")
 		local target = model or hit
 
-		-- Si c'est un Model nommé uniquement par un nombre (1, 2, 3...), on ne touche PAS au model entier
 		if target:IsA("Model") and isNumberName(target.Name) then
 			if hit:IsA("BasePart") then
 				hit.Color = Color3.fromRGB(0, 0, 0)
